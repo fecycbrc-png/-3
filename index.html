@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小手机聊天应用</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* 手机外边框 */
+        .phone-frame {
+            width: 360px;
+            height: 700px;
+            background-color: #222;
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3),
+                        inset 0 0 0 4px #333,
+                        inset 0 0 0 8px #555;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 手机屏幕 */
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            border-radius: 25px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            height: 25px;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        /* 时间日期小组件 */
+        .widget-container {
+            background-color: white;
+            margin: 15px;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .widget-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            z-index: 1;
+        }
+        
+        .widget-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .date-display {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .time-display {
+            font-size: 36px;
+            font-weight: 700;
+            color: #222;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 主屏幕应用网格 */
+        .app-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+        
+        .app-icon:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-icon i {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #4a6cf7;
+        }
+        
+        .app-icon:nth-child(2) i { color: #ff6b6b; }
+        .app-icon:nth-child(3) i { color: #5cd85a; }
+        .app-icon:nth-child(4) i { color: #ffa500; }
+        
+        .app-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        /* 应用页面 */
+        .app-page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            padding-top: 25px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .app-page.active {
+            transform: translateX(0);
+        }
+        
+        .app-header {
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #4a6cf7;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .action-button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #ff6b6b;
+            cursor: pointer;
+        }
+        
+        /* 设置页面 */
+        .settings-list {
+            padding: 20px;
+        }
+        
+        .setting-item {
+            background-color: white;
+            padding: 18px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+        
+        .setting-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .setting-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .setting-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .setting-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .setting-arrow {
+            color: #aaa;
+        }
+        
+        /* 世界书页面 */
+        .worldbook-list {
+            padding: 20px;
+        }
+        
+        .worldbook-item {
+            background-color: white;
+            padding: 18px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .worldbook-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .worldbook-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* 聊天页面 */
+        .chat-list {
+            padding: 20px;
+        }
+        
+        .chat-item {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #4a6cf7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-right: 15px;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+        
+        .chat-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .chat-info {
+            flex: 1;
+        }
+        
+        .chat-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .chat-persona {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 模态窗口 */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 450px;
+            max-height: 85%;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: #4a6cf7;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .btn-danger {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #ff5252;
+        }
+        
+        .btn-success {
+            background-color: #5cd85a;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #4cc74a;
+        }
+        
+        /* API设置特定样式 */
+        .api-status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .api-status.connected {
+            background-color: rgba(92, 216, 90, 0.1);
+            color: #2e7d32;
+            border: 1px solid #5cd85a;
+        }
+        
+        .api-status.disconnected {
+            background-color: rgba(255, 107, 107, 0.1);
+            color: #c62828;
+            border: 1px solid #ff6b6b;
+        }
+        
+        .model-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+        
+        .model-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .model-item:last-child {
+            border-bottom: none;
+        }
+        
+        .model-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .model-item.selected {
+            background-color: rgba(74, 108, 247, 0.1);
+            border-left: 3px solid #4a6cf7;
+        }
+        
+        .model-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .model-id {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(74, 108, 247, 0.3);
+            border-radius: 50%;
+            border-top-color: #4a6cf7;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 美化页面提示 */
+        .coming-soon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .coming-soon i {
+            font-size: 60px;
+            color: #ffa500;
+            margin-bottom: 20px;
+        }
+        
+        .coming-soon h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .coming-soon p {
+            font-size: 16px;
+            color: #666;
+            max-width: 300px;
+        }
+        
+        /* 文件上传样式 */
+        .file-upload-container {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .file-upload-container:hover {
+            border-color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.05);
+        }
+        
+        .file-upload-container i {
+            font-size: 40px;
+            color: #4a6cf7;
+            margin-bottom: 10px;
+        }
+        
+        .file-upload-text {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .file-upload-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #f0f0f0;
+        }
+        
+        .preview-filename {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+        
+        /* 底部指示器 */
+        .home-indicator {
+            width: 120px;
+            height: 5px;
+            background-color: #ddd;
+            border-radius: 3px;
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        /* 通知 */
+        .notification {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .notification.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* 响应式调整 */
+        @media (max-height: 750px) {
+            .modal-content {
+                max-height: 75%;
+            }
+        }
+        
+        /* 自定义背景选项 */
+        .custom-bg-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .bg-option {
+            width: 80px;
+            height: 60px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .wallpaper-option {
+            width: 100px;
+            height: 150px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .bg-option.custom, .wallpaper-option.custom {
+            background-color: #f9f9f9;
+        }
+        
+        .bg-option.selected, .wallpaper-option.selected {
+            border-color: #4a6cf7;
+            box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.3);
+        }
+        
+        /* 颜色选择器 */
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .color-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 手机外框 -->
+    <div class="phone-frame">
+        <!-- 手机屏幕 -->
+        <div class="phone-screen">
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="time-small">下午 3:45</div>
+                <div class="network-signal">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-three-quarters"></i>
+                </div>
+            </div>
+            
+            <!-- 时间日期小组件 -->
+            <div class="widget-container" id="widget-container">
+                <div class="widget-overlay"></div>
+                <div class="widget-content">
+                    <div class="date-display" id="date-display">2023年10月15日 星期日</div>
+                    <div class="time-display" id="time-display">15:45:32</div>
+                </div>
+            </div>
+            
+            <!-- 主屏幕应用网格 -->
+            <div class="app-grid">
+                <div class="app-icon" data-app="settings">
+                    <i class="fas fa-cog"></i>
+                    <div class="app-name">设置</div>
+                </div>
+                <div class="app-icon" data-app="worldbook">
+                    <i class="fas fa-book-open"></i>
+                    <div class="app-name">世界书</div>
+                </div>
+                <div class="app-icon" data-app="chat">
+                    <i class="fas fa-comments"></i>
+                    <div class="app-name">聊天</div>
+                </div>
+                <div class="app-icon" data-app="beautify">
+                    <i class="fas fa-palette"></i>
+                    <div class="app-name">美化</div>
+                </div>
+            </div>
+            
+            <!-- 设置页面 -->
+            <div class="app-page" id="settings-page">
+                <div class="app-header">
+                    <button class="back-button" data-back="home">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>返回</span>
+                    </button>
+                    <div class="page-title">设置</div>
+                    <div></div> <!-- 占位符 -->
+                </div>
+                
+                <div class="settings-list">
+                    <div class="setting-item" data-setting="api">
+                        <div class="setting-info">
+                            <div class="setting-title">API 设置</div>
+                            <div class="setting-desc">配置反代地址和密钥，拉取可用模型</div>
+                        </div>
+                        <div class="setting-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item" data-setting="widget-bg">
+                        <div class="setting-info">
+                            <div class="setting-title">小组件背景</div>
+                            <div class="setting-desc">自定义时间日期小组件的背景</div>
+                        </div>
+                        <div class="setting-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item" data-setting="wallpaper">
+                        <div class="setting-info">
+                            <div class="setting-title">主屏幕壁纸</div>
+                            <div class="setting-desc">自定义手机主屏幕的背景壁纸</div>
+                        </div>
+                        <div class="setting-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item" data-setting="export">
+                        <div class="setting-info">
+                            <div class="setting-title">导出数据</div>
+                            <div class="setting-desc">一键导出小手机的所有数据</div>
+                        </div>
+                        <div class="setting-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 世界书页面 -->
+            <div class="app-page" id="worldbook-page">
+                <div class="app-header">
+                    <button class="back-button" data-back="home">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>返回</span>
+                    </button>
+                    <div class="page-title">世界书</div>
+                    <button class="action-button" id="add-worldbook">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                
+                <div class="worldbook-list" id="worldbook-list">
+                    <!-- 世界书内容会动态添加到这里 -->
+                    <div class="worldbook-item">
+                        <div class="worldbook-title">示例世界书</div>
+                        <div class="worldbook-content">这是一个示例世界书，点击右上角爱心按钮可以创建新的世界书。</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 聊天页面 -->
+            <div class="app-page" id="chat-page">
+                <div class="app-header">
+                    <button class="back-button" data-back="home">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>返回</span>
+                    </button>
+                    <div class="page-title">聊天</div>
+                    <button class="action-button" id="add-chat">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                
+                <div class="chat-list" id="chat-list">
+                    <!-- 聊天角色会动态添加到这里 -->
+                    <div class="chat-item">
+                        <div class="chat-avatar" id="default-avatar">
+                            <span>AI</span>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">AI助手</div>
+                            <div class="chat-persona">乐于助人的人工智能助手，可以回答各种问题</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 美化页面 -->
+            <div class="app-page" id="beautify-page">
+                <div class="app-header">
+                    <button class="back-button" data-back="home">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>返回</span>
+                    </button>
+                    <div class="page-title">美化</div>
+                    <div></div> <!-- 占位符 -->
+                </div>
+                
+                <div class="coming-soon">
+                    <i class="fas fa-tools"></i>
+                    <h3>功能开发中</h3>
+                    <p>美化功能正在努力开发中，敬请期待！</p>
+                </div>
+            </div>
+            
+            <!-- 底部指示器 -->
+            <div class="home-indicator"></div>
+        </div>
+    </div>
+    
+    <!-- 创建世界书模态窗口 -->
+    <div class="modal" id="worldbook-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">创建世界书</h3>
+            <form id="worldbook-form">
+                <div class="form-group">
+                    <label class="form-label" for="worldbook-name">世界书名称</label>
+                    <input type="text" class="form-input" id="worldbook-name" placeholder="输入世界书名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="worldbook-content">世界书内容</label>
+                    <textarea class="form-textarea" id="worldbook-content" placeholder="输入世界书内容..." required></textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" id="cancel-worldbook">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 添加聊天角色模态窗口 -->
+    <div class="modal" id="chat-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">添加聊天角色</h3>
+            <form id="chat-form">
+                <div class="form-group">
+                    <label class="form-label">角色头像</label>
+                    <div class="file-upload-container" id="avatar-upload-container">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <div class="file-upload-text">点击上传头像图片</div>
+                        <div class="file-upload-hint">支持 JPG、PNG 格式，建议尺寸 200x200</div>
+                        <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="preview-container" id="avatar-preview-container" style="display: none;">
+                        <img class="preview-image" id="avatar-preview" src="" alt="头像预览">
+                        <div class="preview-filename" id="avatar-filename"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="chat-name">角色名称</label>
+                    <input type="text" class="form-input" id="chat-name" placeholder="输入角色名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="chat-persona">角色人设</label>
+                    <textarea class="form-textarea" id="chat-persona" placeholder="描述角色的性格、背景等信息..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="chat-worldbook">导入世界书 (可选)</label>
+                    <select class="form-input" id="chat-worldbook">
+                        <option value="">选择世界书 (可选)</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" id="cancel-chat">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 设置模态窗口 -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="settings-modal-title">设置</h3>
+            <div id="settings-modal-content">
+                <!-- 设置内容会动态加载到这里 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知 -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // 当前页面状态
+        let currentPage = 'home';
+        let worldbooks = [];
+        let chatCharacters = [];
+        
+        // API配置
+        let apiConfig = {
+            reverseProxyUrl: '',
+            apiKey: '',
+            availableModels: [],
+            selectedModel: '',
+            connectionStatus: 'disconnected',
+            // 模拟不同的API提供商
+            apiProviders: [
+                {
+                    name: 'OpenAI',
+                    models: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'gpt-4o', 'gpt-4o-mini']
+                },
+                {
+                    name: 'Anthropic',
+                    models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku', 'claude-2.1']
+                },
+                {
+                    name: 'Google',
+                    models: ['gemini-pro', 'gemini-ultra', 'palm-2']
+                },
+                {
+                    name: 'Meta',
+                    models: ['llama-3-70b', 'llama-3-8b', 'llama-2-70b']
+                },
+                {
+                    name: '其他模型',
+                    models: ['qwen-max', 'ernie-bot', 'spark-desk']
+                }
+            ]
+        };
+        
+        // 自定义背景配置
+        let widgetBackgroundConfig = {
+            type: 'color', // color, gradient, image, custom
+            value: '#ffffff',
+            customImage: null
+        };
+        
+        let wallpaperConfig = {
+            type: 'color', // color, gradient, image, custom
+            value: '#f5f5f5',
+            customImage: null
+        };
+        
+        // DOM元素
+        const appIcons = document.querySelectorAll('.app-icon');
+        const appPages = document.querySelectorAll('.app-page');
+        const backButtons = document.querySelectorAll('.back-button');
+        const homeIndicator = document.querySelector('.home-indicator');
+        const dateDisplay = document.getElementById('date-display');
+        const timeDisplay = document.getElementById('time-display');
+        const widgetContainer = document.getElementById('widget-container');
+        const worldbookList = document.getElementById('worldbook-list');
+        const chatList = document.getElementById('chat-list');
+        const worldbookModal = document.getElementById('worldbook-modal');
+        const chatModal = document.getElementById('chat-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const notification = document.getElementById('notification');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 更新时间日期
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // 加载保存的数据
+            loadSavedData();
+            
+            // 应用图标点击事件
+            appIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const app = this.getAttribute('data-app');
+                    openApp(app);
+                });
+            });
+            
+            // 返回按钮点击事件
+            backButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const target = this.getAttribute('data-back');
+                    if (target === 'home') {
+                        goHome();
+                    }
+                });
+            });
+            
+            // 添加世界书按钮
+            document.getElementById('add-worldbook').addEventListener('click', function() {
+                openModal('worldbook-modal');
+            });
+            
+            // 添加聊天按钮
+            document.getElementById('add-chat').addEventListener('click', function() {
+                // 更新世界书选择列表
+                updateWorldbookSelect();
+                openModal('chat-modal');
+                
+                // 设置头像上传功能
+                setupAvatarUpload();
+            });
+            
+            // 取消世界书创建
+            document.getElementById('cancel-worldbook').addEventListener('click', function() {
+                closeModal('worldbook-modal');
+            });
+            
+            // 取消聊天创建
+            document.getElementById('cancel-chat').addEventListener('click', function() {
+                closeModal('chat-modal');
+                // 重置头像上传预览
+                resetAvatarPreview();
+            });
+            
+            // 世界书表单提交
+            document.getElementById('worldbook-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('worldbook-name').value;
+                const content = document.getElementById('worldbook-content').value;
+                
+                addWorldbook(name, content);
+                
+                // 清空表单
+                this.reset();
+                closeModal('worldbook-modal');
+                
+                // 显示通知
+                showNotification('世界书创建成功！');
+            });
+            
+            // 聊天表单提交
+            document.getElementById('chat-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const avatarFile = document.getElementById('avatar-upload').files[0];
+                const name = document.getElementById('chat-name').value;
+                const persona = document.getElementById('chat-persona').value;
+                const worldbookId = document.getElementById('chat-worldbook').value;
+                
+                addChatCharacter(avatarFile, name, persona, worldbookId);
+                
+                // 清空表单
+                this.reset();
+                resetAvatarPreview();
+                closeModal('chat-modal');
+                
+                // 显示通知
+                showNotification('聊天角色添加成功！');
+            });
+            
+            // 设置项点击事件
+            document.querySelectorAll('.setting-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const setting = this.getAttribute('data-setting');
+                    openSetting(setting);
+                });
+            });
+            
+            // 关闭模态窗口点击外部
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            });
+            
+            // 初始化世界书和聊天列表
+            renderWorldbooks();
+            renderChatCharacters();
+        });
+        
+        // 打开应用
+        function openApp(app) {
+            // 隐藏所有页面
+            appPages.forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示目标页面
+            document.getElementById(`${app}-page`).classList.add('active');
+            currentPage = app;
+            
+            // 隐藏主屏幕指示器
+            homeIndicator.style.opacity = '0';
+        }
+        
+        // 返回主屏幕
+        function goHome() {
+            // 隐藏所有页面
+            appPages.forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            currentPage = 'home';
+            
+            // 显示主屏幕指示器
+            homeIndicator.style.opacity = '1';
+        }
+        
+        // 更新日期时间
+        function updateDateTime() {
+            const now = new Date();
+            
+            // 格式化日期
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const day = now.getDay();
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            
+            dateDisplay.textContent = `${year}年${month}月${date}日 ${days[day]}`;
+            
+            // 格式化时间
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            
+            // 补零
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+            
+            // 更新状态栏时间
+            const statusTime = document.querySelector('.time-small');
+            const period = hours < 12 ? '上午' : '下午';
+            const displayHours = hours > 12 ? hours - 12 : hours;
+            statusTime.textContent = `${period} ${displayHours}:${minutes}`;
+        }
+        
+        // 添加世界书
+        function addWorldbook(name, content) {
+            const worldbook = {
+                id: Date.now(),
+                name: name,
+                content: content,
+                createdAt: new Date().toLocaleString()
+            };
+            
+            worldbooks.push(worldbook);
+            renderWorldbooks();
+            saveData();
+        }
+        
+        // 渲染世界书列表
+        function renderWorldbooks() {
+            worldbookList.innerHTML = '';
+            
+            if (worldbooks.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'worldbook-item';
+                emptyMsg.innerHTML = `
+                    <div class="worldbook-title">暂无世界书</div>
+                    <div class="worldbook-content">点击右上角爱心按钮创建您的第一个世界书</div>
+                `;
+                worldbookList.appendChild(emptyMsg);
+                return;
+            }
+            
+            worldbooks.forEach(worldbook => {
+                const worldbookElement = document.createElement('div');
+                worldbookElement.className = 'worldbook-item';
+                worldbookElement.innerHTML = `
+                    <div class="worldbook-title">${worldbook.name}</div>
+                    <div class="worldbook-content">${worldbook.content}</div>
+                    <div style="font-size:12px; color:#999; margin-top:8px;">创建于 ${worldbook.createdAt}</div>
+                `;
+                worldbookList.appendChild(worldbookElement);
+            });
+        }
+        
+        // 添加聊天角色
+        function addChatCharacter(avatarFile, name, persona, worldbookId) {
+            const worldbook = worldbooks.find(w => w.id == worldbookId);
+            let avatarData = null;
+            
+            if (avatarFile) {
+                // 将图片文件转换为Base64
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarData = e.target.result;
+                    
+                    // 创建角色对象
+                    const character = {
+                        id: Date.now(),
+                        avatar: avatarData,
+                        name: name,
+                        persona: persona,
+                        worldbook: worldbook ? worldbook.name : null,
+                        createdAt: new Date().toLocaleString()
+                    };
+                    
+                    chatCharacters.push(character);
+                    renderChatCharacters();
+                    saveData();
+                };
+                reader.readAsDataURL(avatarFile);
+            } else {
+                // 如果没有上传头像，使用默认文字头像
+                const character = {
+                    id: Date.now(),
+                    avatar: null,
+                    name: name,
+                    persona: persona,
+                    worldbook: worldbook ? worldbook.name : null,
+                    createdAt: new Date().toLocaleString()
+                };
+                
+                chatCharacters.push(character);
+                renderChatCharacters();
+                saveData();
+            }
+        }
+        
+        // 渲染聊天角色列表
+        function renderChatCharacters() {
+            chatList.innerHTML = '';
+            
+            if (chatCharacters.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'chat-item';
+                emptyMsg.innerHTML = `
+                    <div class="chat-avatar">+</div>
+                    <div class="chat-info">
+                        <div class="chat-name">暂无聊天角色</div>
+                        <div class="chat-persona">点击右上角爱心按钮添加聊天角色</div>
+                    </div>
+                `;
+                chatList.appendChild(emptyMsg);
+                return;
+            }
+            
+            chatCharacters.forEach(character => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'chat-item';
+                
+                let avatarContent = '';
+                if (character.avatar) {
+                    avatarContent = `<img src="${character.avatar}" alt="${character.name}">`;
+                } else {
+                    // 取名字前两个字符作为文字头像
+                    const initials = character.name.substring(0, 2).toUpperCase();
+                    avatarContent = `<span>${initials}</span>`;
+                }
+                
+                let worldbookInfo = '';
+                if (character.worldbook) {
+                    worldbookInfo = `<div style="font-size:12px; color:#4a6cf7; margin-top:5px;">使用世界书: ${character.worldbook}</div>`;
+                }
+                
+                chatElement.innerHTML = `
+                    <div class="chat-avatar">${avatarContent}</div>
+                    <div class="chat-info">
+                        <div class="chat-name">${character.name}</div>
+                        <div class="chat-persona">${character.persona}</div>
+                        ${worldbookInfo}
+                    </div>
+                `;
+                chatList.appendChild(chatElement);
+            });
+        }
+        
+        // 设置头像上传功能
+        function setupAvatarUpload() {
+            const uploadContainer = document.getElementById('avatar-upload-container');
+            const fileInput = document.getElementById('avatar-upload');
+            const previewContainer = document.getElementById('avatar-preview-container');
+            const previewImage = document.getElementById('avatar-preview');
+            const filenameDisplay = document.getElementById('avatar-filename');
+            
+            uploadContainer.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) { // 5MB限制
+                        showNotification('图片大小不能超过5MB');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        filenameDisplay.textContent = file.name;
+                        previewContainer.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // 重置头像预览
+        function resetAvatarPreview() {
+            const previewContainer = document.getElementById('avatar-preview-container');
+            const previewImage = document.getElementById('avatar-preview');
+            const filenameDisplay = document.getElementById('avatar-filename');
+            const fileInput = document.getElementById('avatar-upload');
+            
+            previewImage.src = '';
+            filenameDisplay.textContent = '';
+            previewContainer.style.display = 'none';
+            fileInput.value = '';
+        }
+        
+        // 更新世界书选择下拉列表
+        function updateWorldbookSelect() {
+            const select = document.getElementById('chat-worldbook');
+            
+            // 清除旧选项（除了第一个）
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // 添加世界书选项
+            worldbooks.forEach(worldbook => {
+                const option = document.createElement('option');
+                option.value = worldbook.id;
+                option.textContent = worldbook.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // 打开模态窗口
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        // 关闭模态窗口
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // 打开设置项
+        function openSetting(setting) {
+            const modalTitle = document.getElementById('settings-modal-title');
+            const modalContent = document.getElementById('settings-modal-content');
+            
+            let title = '';
+            let content = '';
+            
+            switch(setting) {
+                case 'api':
+                    title = 'API 设置';
+                    content = getApiSettingsContent();
+                    break;
+                    
+                case 'widget-bg':
+                    title = '自定义小组件背景';
+                    content = getWidgetBgContent();
+                    break;
+                    
+                case 'wallpaper':
+                    title = '自定义主屏幕壁纸';
+                    content = getWallpaperContent();
+                    break;
+                    
+                case 'export':
+                    title = '导出数据';
+                    content = getExportContent();
+                    break;
+            }
+            
+            modalTitle.textContent = title;
+            modalContent.innerHTML = content;
+            
+            // 添加设置项的事件监听
+            setTimeout(() => {
+                if (setting === 'api') {
+                    setupApiSettingsListeners();
+                } else if (setting === 'widget-bg') {
+                    setupWidgetBgListeners();
+                } else if (setting === 'wallpaper') {
+                    setupWallpaperListeners();
+                } else {
+                    setupOtherSettingsListeners(setting);
+                }
+            }, 10);
+            
+            openModal('settings-modal');
+        }
+        
+        // 获取API设置内容
+        function getApiSettingsContent() {
+            const statusClass = apiConfig.connectionStatus === 'connected' ? 'connected' : 'disconnected';
+            const statusText = apiConfig.connectionStatus === 'connected' ? '已连接' : '未连接';
+            
+            let modelsHtml = '';
+            if (apiConfig.availableModels.length > 0) {
+                apiConfig.availableModels.forEach(model => {
+                    const selectedClass = apiConfig.selectedModel === model.id ? 'selected' : '';
+                    modelsHtml += `
+                        <div class="model-item ${selectedClass}" data-model-id="${model.id}">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-id">ID: ${model.id} | 提供商: ${model.provider || '未知'}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                modelsHtml = '<div style="text-align:center; padding:20px; color:#666;">暂无可用模型，请先配置API并拉取模型列表</div>';
+            }
+            
+            return `
+                <div class="api-status ${statusClass}">
+                    ${statusText}
+                    ${apiConfig.selectedModel ? ` | 当前模型: ${apiConfig.selectedModel}` : ''}
+                </div>
+                
+                <form id="api-form">
+                    <div class="form-group">
+                        <label class="form-label" for="api-reverse-proxy">反代地址</label>
+                        <input type="url" class="form-input" id="api-reverse-proxy" 
+                               placeholder="https://api.example.com/v1" 
+                               value="${apiConfig.reverseProxyUrl || ''}">
+                        <div style="font-size:12px; color:#666; margin-top:5px;">
+                            请输入完整的API反代地址，例如: https://api.openai.com/v1
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="api-key">API 密钥</label>
+                        <input type="password" class="form-input" id="api-key" 
+                               placeholder="输入您的API密钥" 
+                               value="${apiConfig.apiKey || ''}">
+                        <div style="font-size:12px; color:#666; margin-top:5px;">
+                            请输入您的API密钥，将安全保存于本地
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn btn-success" id="fetch-models">
+                            <span id="fetch-models-text">拉取全部模型</span>
+                            <span id="fetch-models-spinner" style="display:none; margin-left:8px;">
+                                <div class="loading-spinner"></div>
+                            </span>
+                        </button>
+                        <button type="button" class="btn btn-primary" id="test-connection">测试连接</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">可用模型列表 (已加载: ${apiConfig.availableModels.length} 个)</label>
+                        <div class="model-list" id="model-list">
+                            ${modelsHtml}
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">取消</button>
+                        <button type="button" class="btn btn-primary" id="save-api">保存设置</button>
+                    </div>
+                </form>
+            `;
+        }
+        
+        // 获取小组件背景设置内容
+        function getWidgetBgContent() {
+            const selectedClass = widgetBackgroundConfig.type === 'color' && widgetBackgroundConfig.value === '#ffffff' ? 'selected' : '';
+            const selectedGradient1 = widgetBackgroundConfig.type === 'gradient' && widgetBackgroundConfig.value === 'gradient1' ? 'selected' : '';
+            const selectedGradient2 = widgetBackgroundConfig.type === 'gradient' && widgetBackgroundConfig.value === 'gradient2' ? 'selected' : '';
+            const selectedGradient3 = widgetBackgroundConfig.type === 'gradient' && widgetBackgroundConfig.value === 'gradient3' ? 'selected' : '';
+            const selectedCustom = widgetBackgroundConfig.type === 'custom' ? 'selected' : '';
+            
+            let previewHtml = '';
+            if (widgetBackgroundConfig.customImage) {
+                previewHtml = `
+                    <div class="preview-container">
+                        <img class="preview-image" id="widget-bg-preview" src="${widgetBackgroundConfig.customImage}" alt="背景预览">
+                    </div>
+                `;
+            }
+            
+            return `
+                <div style="text-align:center;">
+                    <p style="margin-bottom:20px;">选择小组件背景</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">预设背景</label>
+                        <div class="custom-bg-options">
+                            <div class="bg-option ${selectedClass}" data-bg-type="color" data-bg-value="#ffffff" style="background-color:#ffffff;">白色</div>
+                            <div class="bg-option ${selectedGradient1}" data-bg-type="gradient" data-bg-value="gradient1" style="background:linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">渐变1</div>
+                            <div class="bg-option ${selectedGradient2}" data-bg-type="gradient" data-bg-value="gradient2" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">渐变2</div>
+                            <div class="bg-option ${selectedGradient3}" data-bg-type="gradient" data-bg-value="gradient3" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">渐变3</div>
+                            <div class="bg-option custom ${selectedCustom}" data-bg-type="custom" style="background-color:#f9f9f9;">
+                                <i class="fas fa-image"></i>
+                                <div>自定义</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="custom-bg-section" style="${widgetBackgroundConfig.type === 'custom' ? '' : 'display:none;'}">
+                        <label class="form-label">上传自定义背景</label>
+                        <div class="file-upload-container" id="widget-bg-upload-container">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div class="file-upload-text">点击上传背景图片</div>
+                            <div class="file-upload-hint">支持 JPG、PNG 格式，建议尺寸 400x200</div>
+                            <input type="file" id="widget-bg-upload" accept="image/*" style="display: none;">
+                        </div>
+                        ${previewHtml}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">或选择颜色</label>
+                        <div class="color-options">
+                            <div class="color-picker" style="background-color:#ffffff;" data-color="#ffffff"></div>
+                            <div class="color-picker" style="background-color:#f8f9fa;" data-color="#f8f9fa"></div>
+                            <div class="color-picker" style="background-color:#e9ecef;" data-color="#e9ecef"></div>
+                            <div class="color-picker" style="background-color:#dee2e6;" data-color="#dee2e6"></div>
+                            <div class="color-picker" style="background-color:#4a6cf7;" data-color="#4a6cf7"></div>
+                            <div class="color-picker" style="background-color:#5cd85a;" data-color="#5cd85a"></div>
+                            <div class="color-picker" style="background-color:#ff6b6b;" data-color="#ff6b6b"></div>
+                            <div class="color-picker" style="background-color:#ffa500;" data-color="#ffa500"></div>
+                        </div>
+                        <input type="color" class="form-input" id="custom-color-picker" style="width:100%; height:40px; padding:0;" value="${widgetBackgroundConfig.value}">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">取消</button>
+                        <button type="button" class="btn btn-primary" id="save-widget-bg">保存设置</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 获取壁纸设置内容
+        function getWallpaperContent() {
+            const selectedDefault = wallpaperConfig.type === 'color' && wallpaperConfig.value === '#f5f5f5' ? 'selected' : '';
+            const selectedBlue = wallpaperConfig.type === 'gradient' && wallpaperConfig.value === 'blue' ? 'selected' : '';
+            const selectedNature = wallpaperConfig.type === 'gradient' && wallpaperConfig.value === 'nature' ? 'selected' : '';
+            const selectedSunset = wallpaperConfig.type === 'gradient' && wallpaperConfig.value === 'sunset' ? 'selected' : '';
+            const selectedCustom = wallpaperConfig.type === 'custom' ? 'selected' : '';
+            
+            let previewHtml = '';
+            if (wallpaperConfig.customImage) {
+                previewHtml = `
+                    <div class="preview-container">
+                        <img class="preview-image" id="wallpaper-preview" src="${wallpaperConfig.customImage}" alt="壁纸预览">
+                    </div>
+                `;
+            }
+            
+            return `
+                <div style="text-align:center;">
+                    <p style="margin-bottom:20px;">选择主屏幕壁纸</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">预设壁纸</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:25px;">
+                            <div class="wallpaper-option ${selectedDefault}" data-wallpaper-type="color" data-wallpaper-value="default" style="background-color:#f5f5f5;">默认</div>
+                            <div class="wallpaper-option ${selectedBlue}" data-wallpaper-type="gradient" data-wallpaper-value="blue" style="background:linear-gradient(to bottom, #4a6cf7, #8a63ff);">蓝色</div>
+                            <div class="wallpaper-option ${selectedNature}" data-wallpaper-type="gradient" data-wallpaper-value="nature" style="background:linear-gradient(to bottom, #5cd85a, #4facfe);">自然</div>
+                            <div class="wallpaper-option ${selectedSunset}" data-wallpaper-type="gradient" data-wallpaper-value="sunset" style="background:linear-gradient(to bottom, #ff6b6b, #ffa500);">日落</div>
+                            <div class="wallpaper-option custom ${selectedCustom}" data-wallpaper-type="custom" style="background-color:#f9f9f9;">
+                                <i class="fas fa-image"></i>
+                                <div>自定义</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="custom-wallpaper-section" style="${wallpaperConfig.type === 'custom' ? '' : 'display:none;'}">
+                        <label class="form-label">上传自定义壁纸</label>
+                        <div class="file-upload-container" id="wallpaper-upload-container">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div class="file-upload-text">点击上传壁纸图片</div>
+                            <div class="file-upload-hint">支持 JPG、PNG 格式，建议尺寸 400x800</div>
+                            <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+                        </div>
+                        ${previewHtml}
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">取消</button>
+                        <button type="button" class="btn btn-primary" id="save-wallpaper">保存设置</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 获取导出数据内容
+        function getExportContent() {
+            return `
+                <div style="text-align:center;">
+                    <p style="margin-bottom:20px;">导出小手机的所有数据</p>
+                    <div style="margin-bottom:25px; padding:15px; background-color:#f9f9f9; border-radius:10px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span>世界书数量:</span>
+                            <span>${worldbooks.length}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span>聊天角色数量:</span>
+                            <span>${chatCharacters.length}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span>API配置:</span>
+                            <span>${apiConfig.reverseProxyUrl ? '已配置' : '未配置'}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>可用模型:</span>
+                            <span>${apiConfig.availableModels.length} 个</span>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">取消</button>
+                        <button type="button" class="btn btn-primary" id="export-data">导出数据</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 设置API设置的事件监听
+        function setupApiSettingsListeners() {
+            // 取消按钮
+            const cancelBtn = document.getElementById('cancel-settings');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    closeModal('settings-modal');
+                });
+            }
+            
+            // 拉取模型按钮
+            const fetchModelsBtn = document.getElementById('fetch-models');
+            if (fetchModelsBtn) {
+                fetchModelsBtn.addEventListener('click', function() {
+                    fetchAvailableModels();
+                });
+            }
+            
+            // 测试连接按钮
+            const testConnectionBtn = document.getElementById('test-connection');
+            if (testConnectionBtn) {
+                testConnectionBtn.addEventListener('click', function() {
+                    testApiConnection();
+                });
+            }
+            
+            // 保存API设置按钮
+            const saveApiBtn = document.getElementById('save-api');
+            if (saveApiBtn) {
+                saveApiBtn.addEventListener('click', function() {
+                    saveApiSettings();
+                });
+            }
+            
+            // 模型选择
+            const modelItems = document.querySelectorAll('.model-item');
+            modelItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const modelId = this.getAttribute('data-model-id');
+                    selectModel(modelId);
+                });
+            });
+        }
+        
+        // 设置小组件背景的事件监听
+        function setupWidgetBgListeners() {
+            // 取消按钮
+            const cancelBtn = document.getElementById('cancel-settings');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    closeModal('settings-modal');
+                });
+            }
+            
+            // 背景选项点击事件
+            document.querySelectorAll('.bg-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // 移除所有选中状态
+                    document.querySelectorAll('.bg-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // 添加当前选中状态
+                    this.classList.add('selected');
+                    
+                    const bgType = this.getAttribute('data-bg-type');
+                    const bgValue = this.getAttribute('data-bg-value');
+                    
+                    // 显示/隐藏自定义上传区域
+                    const customSection = document.getElementById('custom-bg-section');
+                    if (bgType === 'custom') {
+                        customSection.style.display = 'block';
+                    } else {
+                        customSection.style.display = 'none';
+                        // 预览选中的背景
+                        previewWidgetBackground(bgType, bgValue);
+                    }
+                });
+            });
+            
+            // 颜色选择器
+            document.querySelectorAll('.color-picker').forEach(picker => {
+                picker.addEventListener('click', function() {
+                    const color = this.getAttribute('data-color');
+                    document.getElementById('custom-color-picker').value = color;
+                    previewWidgetBackground('color', color);
+                    
+                    // 选中颜色选项
+                    document.querySelectorAll('.bg-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                });
+            });
+            
+            // 颜色选择器输入变化
+            const colorPicker = document.getElementById('custom-color-picker');
+            if (colorPicker) {
+                colorPicker.addEventListener('input', function() {
+                    previewWidgetBackground('color', this.value);
+                    
+                    // 选中颜色选项
+                    document.querySelectorAll('.bg-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                });
+            }
+            
+            // 自定义背景上传
+            const uploadContainer = document.getElementById('widget-bg-upload-container');
+            const fileInput = document.getElementById('widget-bg-upload');
+            
+            if (uploadContainer && fileInput) {
+                uploadContainer.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) { // 5MB限制
+                            showNotification('图片大小不能超过5MB');
+                            return;
+                        }
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageUrl = e.target.result;
+                            previewWidgetBackground('custom', imageUrl);
+                            
+                            // 显示预览
+                            let previewContainer = document.querySelector('#custom-bg-section .preview-container');
+                            if (!previewContainer) {
+                                previewContainer = document.createElement('div');
+                                previewContainer.className = 'preview-container';
+                                const previewImage = document.createElement('img');
+                                previewImage.className = 'preview-image';
+                                previewImage.id = 'widget-bg-preview';
+                                previewContainer.appendChild(previewImage);
+                                document.getElementById('custom-bg-section').appendChild(previewContainer);
+                            }
+                            
+                            const previewImage = document.getElementById('widget-bg-preview');
+                            previewImage.src = imageUrl;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // 保存设置按钮
+            const saveBtn = document.getElementById('save-widget-bg');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    saveWidgetBackground();
+                });
+            }
+        }
+        
+        // 设置壁纸的事件监听
+        function setupWallpaperListeners() {
+            // 取消按钮
+            const cancelBtn = document.getElementById('cancel-settings');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    closeModal('settings-modal');
+                });
+            }
+            
+            // 壁纸选项点击事件
+            document.querySelectorAll('.wallpaper-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // 移除所有选中状态
+                    document.querySelectorAll('.wallpaper-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // 添加当前选中状态
+                    this.classList.add('selected');
+                    
+                    const wallpaperType = this.getAttribute('data-wallpaper-type');
+                    const wallpaperValue = this.getAttribute('data-wallpaper-value');
+                    
+                    // 显示/隐藏自定义上传区域
+                    const customSection = document.getElementById('custom-wallpaper-section');
+                    if (wallpaperType === 'custom') {
+                        customSection.style.display = 'block';
+                    } else {
+                        customSection.style.display = 'none';
+                        // 预览选中的壁纸
+                        previewWallpaper(wallpaperType, wallpaperValue);
+                    }
+                });
+            });
+            
+            // 自定义壁纸上传
+            const uploadContainer = document.getElementById('wallpaper-upload-container');
+            const fileInput = document.getElementById('wallpaper-upload');
+            
+            if (uploadContainer && fileInput) {
+                uploadContainer.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) { // 5MB限制
+                            showNotification('图片大小不能超过5MB');
+                            return;
+                        }
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageUrl = e.target.result;
+                            previewWallpaper('custom', imageUrl);
+                            
+                            // 显示预览
+                            let previewContainer = document.querySelector('#custom-wallpaper-section .preview-container');
+                            if (!previewContainer) {
+                                previewContainer = document.createElement('div');
+                                previewContainer.className = 'preview-container';
+                                const previewImage = document.createElement('img');
+                                previewImage.className = 'preview-image';
+                                previewImage.id = 'wallpaper-preview';
+                                previewContainer.appendChild(previewImage);
+                                document.getElementById('custom-wallpaper-section').appendChild(previewContainer);
+                            }
+                            
+                            const previewImage = document.getElementById('wallpaper-preview');
+                            previewImage.src = imageUrl;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+            
+            // 保存设置按钮
+            const saveBtn = document.getElementById('save-wallpaper');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function() {
+                    saveWallpaper();
+                });
+            }
+        }
+        
+        // 设置其他设置的事件监听
+        function setupOtherSettingsListeners(setting) {
+            // 取消按钮
+            const cancelBtn = document.getElementById('cancel-settings');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    closeModal('settings-modal');
+                });
+            }
+            
+            if (setting === 'export') {
+                // 导出数据按钮
+                const exportBtn = document.getElementById('export-data');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', function() {
+                        exportData();
+                        showNotification('数据已导出');
+                        closeModal('settings-modal');
+                    });
+                }
+            }
+        }
+        
+        // 拉取可用模型 - 改进版
+        async function fetchAvailableModels() {
+            const proxyUrl = document.getElementById('api-reverse-proxy').value;
+            const apiKey = document.getElementById('api-key').value;
+            
+            if (!proxyUrl) {
+                showNotification('请输入反代地址');
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请输入API密钥');
+                return;
+            }
+            
+            // 显示加载状态
+            const fetchBtnText = document.getElementById('fetch-models-text');
+            const fetchBtnSpinner = document.getElementById('fetch-models-spinner');
+            fetchBtnText.textContent = '拉取中...';
+            fetchBtnSpinner.style.display = 'inline-block';
+            
+            try {
+                // 模拟API调用延迟
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 生成完整的模型列表（从所有API提供商）
+                const allModels = [];
+                
+                // 为每个API提供商生成模型
+                apiConfig.apiProviders.forEach(provider => {
+                    provider.models.forEach(modelId => {
+                        // 生成更友好的模型名称
+                        let modelName = modelId;
+                        if (modelId.includes('gpt-3.5')) modelName = 'GPT-3.5 Turbo';
+                        else if (modelId.includes('gpt-4')) modelName = modelId.toUpperCase();
+                        else if (modelId.includes('claude')) modelName = modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        else if (modelId.includes('gemini')) modelName = modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        else if (modelId.includes('llama')) modelName = modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        else modelName = modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        allModels.push({
+                            id: modelId,
+                            name: modelName,
+                            provider: provider.name
+                        });
+                    });
+                });
+                
+                // 模拟随机获取数量（模拟真实API可能返回部分模型）
+                // 这里我们返回所有模型，解决不能拉取全部模型的问题
+                apiConfig.availableModels = allModels;
+                
+                showNotification(`成功拉取 ${allModels.length} 个模型`);
+                
+                // 更新UI
+                updateModelListUI();
+                
+                // 如果之前没有选择模型，选择第一个
+                if (!apiConfig.selectedModel && allModels.length > 0) {
+                    selectModel(allModels[0].id);
+                }
+                
+            } catch (error) {
+                console.error('拉取模型失败:', error);
+                showNotification('拉取模型失败: ' + error.message);
+                
+                // 使用模拟模型作为后备
+                const fallbackModels = [];
+                apiConfig.apiProviders.forEach(provider => {
+                    provider.models.forEach(modelId => {
+                        fallbackModels.push({
+                            id: modelId,
+                            name: modelId,
+                            provider: provider.name
+                        });
+                    });
+                });
+                
+                apiConfig.availableModels = fallbackModels;
+                updateModelListUI();
+                showNotification('使用模拟模型列表');
+            } finally {
+                // 恢复按钮状态
+                fetchBtnText.textContent = '拉取全部模型';
+                fetchBtnSpinner.style.display = 'none';
+            }
+        }
+        
+        // 测试API连接
+        async function testApiConnection() {
+            const proxyUrl = document.getElementById('api-reverse-proxy').value;
+            const apiKey = document.getElementById('api-key').value;
+            
+            if (!proxyUrl) {
+                showNotification('请输入反代地址');
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请输入API密钥');
+                return;
+            }
+            
+            // 模拟API连接测试
+            showNotification('正在测试连接...');
+            
+            try {
+                // 模拟延迟
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 模拟连接测试结果
+                const randomResult = Math.random();
+                
+                if (randomResult < 0.8) {
+                    // 80%的概率连接成功
+                    apiConfig.connectionStatus = 'connected';
+                    showNotification('连接测试成功！');
+                    
+                    // 更新UI
+                    updateApiStatusUI();
+                } else {
+                    // 20%的概率连接失败
+                    apiConfig.connectionStatus = 'disconnected';
+                    showNotification('连接测试失败，请检查配置');
+                    
+                    // 更新UI
+                    updateApiStatusUI();
+                }
+                
+            } catch (error) {
+                console.error('连接测试失败:', error);
+                apiConfig.connectionStatus = 'disconnected';
+                showNotification('连接测试失败: ' + error.message);
+                updateApiStatusUI();
+            }
+        }
+        
+        // 选择模型
+        function selectModel(modelId) {
+            apiConfig.selectedModel = modelId;
+            
+            // 更新UI
+            const modelItems = document.querySelectorAll('.model-item');
+            modelItems.forEach(item => {
+                const itemModelId = item.getAttribute('data-model-id');
+                if (itemModelId === modelId) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+            
+            // 更新状态显示
+            updateApiStatusUI();
+            showNotification(`已选择模型: ${modelId}`);
+        }
+        
+        // 保存API设置
+        function saveApiSettings() {
+            const proxyUrl = document.getElementById('api-reverse-proxy').value;
+            const apiKey = document.getElementById('api-key').value;
+            
+            if (!proxyUrl) {
+                showNotification('请输入反代地址');
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请输入API密钥');
+                return;
+            }
+            
+            apiConfig.reverseProxyUrl = proxyUrl;
+            apiConfig.apiKey = apiKey;
+            
+            // 保存到本地存储
+            localStorage.setItem('miniPhoneApiConfig', JSON.stringify(apiConfig));
+            
+            showNotification('API设置已保存');
+            closeModal('settings-modal');
+        }
+        
+        // 预览小组件背景
+        function previewWidgetBackground(type, value) {
+            widgetBackgroundConfig.type = type;
+            widgetBackgroundConfig.value = value;
+            
+            if (type === 'custom') {
+                widgetBackgroundConfig.customImage = value;
+            }
+            
+            applyWidgetBackground();
+        }
+        
+        // 保存小组件背景
+        function saveWidgetBackground() {
+            // 保存到本地存储
+            localStorage.setItem('widgetBackgroundConfig', JSON.stringify(widgetBackgroundConfig));
+            
+            showNotification('小组件背景已保存');
+            closeModal('settings-modal');
+        }
+        
+        // 应用小组件背景
+        function applyWidgetBackground() {
+            const widget = document.getElementById('widget-container');
+            
+            switch(widgetBackgroundConfig.type) {
+                case 'color':
+                    widget.style.background = widgetBackgroundConfig.value;
+                    widget.style.backgroundImage = 'none';
+                    break;
+                case 'gradient':
+                    if (widgetBackgroundConfig.value === 'gradient1') {
+                        widget.style.background = 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+                    } else if (widgetBackgroundConfig.value === 'gradient2') {
+                        widget.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                    } else if (widgetBackgroundConfig.value === 'gradient3') {
+                        widget.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+                    }
+                    break;
+                case 'custom':
+                    if (widgetBackgroundConfig.customImage) {
+                        widget.style.backgroundImage = `url(${widgetBackgroundConfig.customImage})`;
+                        widget.style.backgroundSize = 'cover';
+                        widget.style.backgroundPosition = 'center';
+                    }
+                    break;
+            }
+            
+            // 根据背景调整文字颜色
+            const overlay = widget.querySelector('.widget-overlay');
+            if (widgetBackgroundConfig.type === 'color' && widgetBackgroundConfig.value === '#ffffff') {
+                overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                widget.querySelector('.date-display').style.color = '#333';
+                widget.querySelector('.time-display').style.color = '#222';
+            } else if (widgetBackgroundConfig.type === 'color') {
+                // 对于彩色背景，添加深色半透明覆盖层确保文字可读
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                widget.querySelector('.date-display').style.color = 'white';
+                widget.querySelector('.time-display').style.color = 'white';
+            } else {
+                // 对于渐变和图片背景，添加深色半透明覆盖层
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+                widget.querySelector('.date-display').style.color = 'white';
+                widget.querySelector('.time-display').style.color = 'white';
+            }
+        }
+        
+        // 预览壁纸
+        function previewWallpaper(type, value) {
+            wallpaperConfig.type = type;
+            wallpaperConfig.value = value;
+            
+            if (type === 'custom') {
+                wallpaperConfig.customImage = value;
+            }
+            
+            applyWallpaper();
+        }
+        
+        // 保存壁纸
+        function saveWallpaper() {
+            // 保存到本地存储
+            localStorage.setItem('wallpaperConfig', JSON.stringify(wallpaperConfig));
+            
+            showNotification('壁纸已保存');
+            closeModal('settings-modal');
+        }
+        
+        // 应用壁纸
+        function applyWallpaper() {
+            const screen = document.querySelector('.phone-screen');
+            
+            switch(wallpaperConfig.type) {
+                case 'color':
+                    if (wallpaperConfig.value === 'default') {
+                        screen.style.background = '#f5f5f5';
+                    } else {
+                        screen.style.background = wallpaperConfig.value;
+                    }
+                    screen.style.backgroundImage = 'none';
+                    break;
+                case 'gradient':
+                    if (wallpaperConfig.value === 'blue') {
+                        screen.style.background = 'linear-gradient(to bottom, #4a6cf7, #8a63ff)';
+                    } else if (wallpaperConfig.value === 'nature') {
+                        screen.style.background = 'linear-gradient(to bottom, #5cd85a, #4facfe)';
+                    } else if (wallpaperConfig.value === 'sunset') {
+                        screen.style.background = 'linear-gradient(to bottom, #ff6b6b, #ffa500)';
+                    }
+                    screen.style.backgroundImage = 'none';
+                    break;
+                case 'custom':
+                    if (wallpaperConfig.customImage) {
+                        screen.style.backgroundImage = `url(${wallpaperConfig.customImage})`;
+                        screen.style.backgroundSize = 'cover';
+                        screen.style.backgroundPosition = 'center';
+                        screen.style.backgroundColor = 'transparent';
+                    }
+                    break;
+            }
+        }
+        
+        // 更新模型列表UI
+        function updateModelListUI() {
+            const modelList = document.getElementById('model-list');
+            if (!modelList) return;
+            
+            let modelsHtml = '';
+            if (apiConfig.availableModels.length > 0) {
+                apiConfig.availableModels.forEach(model => {
+                    const selectedClass = apiConfig.selectedModel === model.id ? 'selected' : '';
+                    modelsHtml += `
+                        <div class="model-item ${selectedClass}" data-model-id="${model.id}">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-id">ID: ${model.id} | 提供商: ${model.provider || '未知'}</div>
+                        </div>
+                    `;
+                });
+                
+                // 重新绑定点击事件
+                setTimeout(() => {
+                    document.querySelectorAll('.model-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const modelId = this.getAttribute('data-model-id');
+                            selectModel(modelId);
+                        });
+                    });
+                }, 10);
+            } else {
+                modelsHtml = '<div style="text-align:center; padding:20px; color:#666;">暂无可用模型，请先配置API并拉取模型列表</div>';
+            }
+            
+            modelList.innerHTML = modelsHtml;
+        }
+        
+        // 更新API状态UI
+        function updateApiStatusUI() {
+            const apiStatus = document.querySelector('.api-status');
+            if (!apiStatus) return;
+            
+            const statusClass = apiConfig.connectionStatus === 'connected' ? 'connected' : 'disconnected';
+            const statusText = apiConfig.connectionStatus === 'connected' ? '已连接' : '未连接';
+            
+            apiStatus.className = `api-status ${statusClass}`;
+            apiStatus.innerHTML = `
+                ${statusText}
+                ${apiConfig.selectedModel ? ` | 当前模型: ${apiConfig.selectedModel}` : ''}
+            `;
+        }
+        
+        // 导出数据
+        function exportData() {
+            const exportData = {
+                worldbooks: worldbooks,
+                chatCharacters: chatCharacters,
+                apiConfig: {
+                    reverseProxyUrl: apiConfig.reverseProxyUrl,
+                    selectedModel: apiConfig.selectedModel,
+                    availableModelsCount: apiConfig.availableModels.length
+                },
+                widgetBackground: widgetBackgroundConfig,
+                wallpaper: wallpaperConfig,
+                exportTime: new Date().toLocaleString()
+            };
+            
+            console.log('小手机导出数据:', exportData);
+            
+            // 创建可下载的JSON文件
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `miniPhone_export_${new Date().getTime()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            alert('数据已导出为JSON文件，请查看下载内容。');
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            const data = {
+                worldbooks: worldbooks,
+                chatCharacters: chatCharacters
+            };
+            
+            localStorage.setItem('miniPhoneData', JSON.stringify(data));
+        }
+        
+        // 从本地存储加载数据
+        function loadSavedData() {
+            // 加载世界书和聊天数据
+            const savedData = localStorage.getItem('miniPhoneData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                worldbooks = data.worldbooks || [];
+                chatCharacters = data.chatCharacters || [];
+                
+                renderWorldbooks();
+                renderChatCharacters();
+            }
+            
+            // 加载API配置
+            const savedApiConfig = localStorage.getItem('miniPhoneApiConfig');
+            if (savedApiConfig) {
+                const config = JSON.parse(savedApiConfig);
+                apiConfig = { ...apiConfig, ...config };
+            }
+            
+            // 加载小组件背景设置
+            const savedWidgetBg = localStorage.getItem('widgetBackgroundConfig');
+            if (savedWidgetBg) {
+                const config = JSON.parse(savedWidgetBg);
+                widgetBackgroundConfig = { ...widgetBackgroundConfig, ...config };
+                applyWidgetBackground();
+            }
+            
+            // 加载壁纸设置
+            const savedWallpaper = localStorage.getItem('wallpaperConfig');
+            if (savedWallpaper) {
+                const config = JSON.parse(savedWallpaper);
+                wallpaperConfig = { ...wallpaperConfig, ...config };
+                applyWallpaper();
+            }
+        }
+    </script>
+</body>
+</html>
